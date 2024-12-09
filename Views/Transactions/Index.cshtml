@@ -1,0 +1,222 @@
+@model IEnumerable<AspnetCoreMvcFull.Models.Transactions>
+@using Newtonsoft.Json
+
+@{
+  ViewData["Title"] = "Index";
+  ViewData["statusClass"] = "";
+}
+
+@section VendorStyles {
+  <link rel="stylesheet" href="~/vendor/libs/datatables-bs5/datatables.bootstrap5.css">
+  <link rel="stylesheet" href="~/vendor/libs/datatables-responsive-bs5/responsive.bootstrap5.css">
+  <link rel="stylesheet" href="~/vendor/libs/datatables-buttons-bs5/buttons.bootstrap5.css">
+  <link rel="stylesheet" href="~/vendor/libs/sweetalert2/sweetalert2.css" />
+  <link rel="stylesheet" href="~/vendor/libs/&#64;form-validation/umd/styles/index.min.css" />
+}
+
+@section VendorScripts {
+  <script src="~/vendor/libs/moment/moment.js"></script>
+  <script src="~/vendor/libs/datatables-bs5/datatables-bootstrap5.js"></script>
+  <script src="~/vendor/libs/sweetalert2/sweetalert2.js"></script>
+  <script src="~/vendor/libs/&#64;form-validation/umd/bundle/popular.min.js"></script>
+  <script src="~/vendor/libs/&#64;form-validation/umd/plugin-bootstrap5/index.min.js"></script>
+  <script src="~/vendor/libs/&#64;form-validation/umd/plugin-auto-focus/index.min.js"></script>
+  <script src="~/vendor/libs/cleavejs/cleave.js"></script>
+  <script src="~/vendor/libs/cleavejs/cleave-phone.js"></script>
+}
+
+@section PageScripts {
+  <script src="~/js/transactions-delete.js"></script>
+  <script src="~/js/transactions-list.js"></script>
+}
+
+<!-- TransactionsToasts-->
+
+@if (TempData.ContainsKey("TransactionsToast") && TempData.ContainsKey("DisplayToast") && (bool?)TempData["DisplayToast"] == true)
+{
+    var transactionsToastJson = TempData["TransactionsToast"] as string;
+    if (!string.IsNullOrEmpty(transactionsToastJson))
+    {
+    var transactionsToast = JsonConvert.DeserializeObject<List<TransactionsToast>>(transactionsToastJson);
+
+        // Check if transactionsToast is not null before proceeding
+    if (transactionsToast?.Count > 0)
+    {
+    // Display the toast
+    <div class="toast-container end-0 m-1 me-4">
+        @foreach (var toast in transactionsToast)
+        {
+            <div class="toast @toast.CssClass" role="alert" aria-live="assertive" aria-atomic="true" data-autohide="true" data-delay="2000">
+                <div class="toast-body text-center text-white">
+                    @toast.Message
+                </div>
+            </div>
+        }
+    </div>
+     }
+     }
+
+    // Remove TempData flag to prevent displaying the toast on subsequent page reloads
+    TempData.Remove("DisplayToast");
+
+}
+
+<!-- /TransactionsToasts -->
+
+
+
+<h4 class="py-3 mb-4">
+  <span class="text-muted fw-light">Transactions /</span> Transactions List
+</h4>
+
+<div class="row g-4 mb-4">
+  <div class="col-sm-6 col-xl-3">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex align-items-start justify-content-between">
+          <div class="content-left">
+            <div class="d-flex align-items-end">
+              <h3 class="mb-0 me-2">@ViewData["TotalTransactions"]</h3>
+              <small class="text-primary"></small>
+            </div>
+            <small>Total Transactions</small>
+          </div>
+          <span class="badge bg-label-primary rounded p-2">
+            <i class="mdi mdi-swap-horizontal mdi-24px"></i>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex align-items-start justify-content-between">
+          <div class="content-left">
+            <div class="d-flex align-items-end">
+              <h3 class="mb-0 me-2">$@ViewData["TotalPaidTransactions"]</h3>
+              <small class="text-primary"></small>
+            </div>
+            <small>Total Paid</small>
+          </div>
+          <span class="badge bg-label-success rounded p-2">
+            <i class="mdi mdi-check mdi-24px"></i>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex align-items-start justify-content-between">
+          <div class="content-left">
+            <div class="d-flex align-items-end">
+              <h3 class="mb-0 me-2">$@ViewData["TotalDueTransactions"]</h3>
+              <small class="text-primary"></small>
+            </div>
+            <small>Total Due</small>
+          </div>
+          <span class="badge bg-label-warning rounded p-2">
+            <i class="mdi mdi-timer-alert mdi-24px"></i>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex align-items-start justify-content-between">
+          <div class="content-left">
+            <div class="d-flex align-items-end">
+              <h3 class="mb-0 me-2">$@ViewData["TotalCanceledTransactions"]</h3>
+              <small class="text-primary"></small>
+            </div>
+            <small>Total Canceled</small>
+          </div>
+          <span class="badge bg-label-danger rounded p-2">
+            <i class="mdi mdi-cancel mdi-24px"></i>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+@* Transactions Table *@
+<div class="card">
+  <div class="card-datatable table-responsive pb-0">
+    <table id="transactionsTable" class="table">
+      <thead class="table-light">
+        <tr class="text-nowrap">
+          <th></th>
+          <th>@Html.DisplayNameFor(model => model.Id)</th>
+          <th>
+            @Html.DisplayNameFor(model => model.Customer)
+          </th>
+          <th>
+            @Html.DisplayNameFor(model => model.TransactionDate)
+          </th>
+          <th>
+            @Html.DisplayNameFor(model => model.DueDate)
+          </th>
+          <th>
+            @Html.DisplayNameFor(model => model.Total)
+          </th>
+          <th>
+            @Html.DisplayNameFor(model => model.Status)
+          </th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (Model?.Any() == true){
+          @foreach (var item in Model) {
+           string statusClass = "info"; // Default value if item.Status is null or doesn't match any case
+
+            if (!string.IsNullOrWhiteSpace(item.Status)) {
+              string lowerCaseStatus = item.Status.ToLower();
+
+              if (lowerCaseStatus == "paid") {
+                statusClass = "success";
+              } else if (lowerCaseStatus == "due") {
+                statusClass = "warning";
+              } else if (lowerCaseStatus == "canceled") {
+                statusClass = "danger";
+              }
+            }
+
+            <tr>
+              <td></td>
+              <td>
+                @Html.DisplayFor(modelItem => item.Id)
+              </td>
+              <td>
+                @Html.DisplayFor(modelItem => item.Customer)
+              </td>
+              <td>
+                @item.TransactionDate.ToString("dd MMMM, yy")
+              </td>
+              <td>
+                @item.DueDate.ToString("dd MMMM, yy")
+              </td>
+              <td>
+                @Html.DisplayFor(modelItem => item.Total)
+              </td>
+              <td>
+                <div class="badge bg-@statusClass rounded-pill">
+                  @Html.DisplayFor(modelItem => item.Status)
+                </div>
+              </td>
+              <td class="text-nowrap">
+                <a asp-action="Update" asp-route-id="@item.Id" class="btn btn-sm btn-icon shadow-none"><i class='mdi mdi-pencil-outline mdi-20px'></i></a>
+                <a href="/Transactions/Delete/@item.Id" class="btn btn-sm btn-icon shadow-none delete-transaction" data-transaction-username="@Html.DisplayFor(modelItem => item.Customer)"><i class="mdi mdi-delete-outline mdi-20px"></i></a>
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
